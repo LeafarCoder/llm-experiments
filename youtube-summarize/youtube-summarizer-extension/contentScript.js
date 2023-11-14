@@ -146,3 +146,45 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   
   sendResponse("Ok");
 });
+
+
+// ########################################################
+// ########################################################
+// ########################################################
+
+async function fetch_model(){
+  // get the API model from local storage
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(['apiModel'], result => resolve(result))
+  });
+};
+
+async function fetch_apiKey(){
+  // get the API model from local storage
+  return new Promise(resolve => {
+    chrome.storage.local.get(['apiKey'], result => resolve(result))
+  });
+};
+
+async function create_thread(apiKey) {
+  try {
+      let response = await fetch('https://api.openai.com/v1/threads', {
+          method: 'POST',
+          headers: {
+              'Authorization': `Bearer ${apiKey}`
+          }});
+      let data = await response.json();
+      console.log(data);
+      return data;
+      
+  } catch (error) {
+      console.error('Error fetching data:', error);
+  }
+}
+
+
+
+const apiKey = await fetch_apiKey();
+console.log("api: " + apiKey);
+// apiModel = fetch_apikey_and_model(); 
+let data = await create_thread(apiKey);
