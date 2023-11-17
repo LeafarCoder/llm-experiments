@@ -1,0 +1,66 @@
+@startuml "Youtube Prompter extension"
+
+title Youtube Prompter extension
+
+' skinparam style strictuml
+skinparam DefaultTextAlignment Center
+' skinparam handwritten true
+
+actor "User" as user
+participant "options.js" as options #LimeGreen
+database "Chrome storage" as ch_storage #Gray
+participant "background.js" as bg #LimeGreen
+participant "content.js" as content #LimeGreen
+participant "popup.js" as popup #LimeGreen
+participant "OpenAI" as openai #SkyBlue
+
+
+== Extension installation ==
+options -> user: Ask for OpenAI API Key
+user --> options: Insert OpenAI API Key
+options -> user: Confirm/Reject OpenAI API Key
+options -> ch_storage: Store OpenAI\nAPI Key
+
+== New Youtube video loaded ==
+bg -> content: GET_VIDEO_TRANSCRIPT
+content --> bg: {transcriptURL}
+bg -> bg: Get transcript for\nuser's prefered language
+
+== User query ==
+user -> popup: User submits query
+popup -> bg: Query sent to background
+
+group On 1st user query for current video_id
+    bg -> ch_storage: Get thread_id\nfor current videoId
+    ch_storage --> bg: thread_id
+    alt valid thread_id
+        bg -> openai: Check if thread_id is still valid
+    else no thread_id found on Chrome storage
+        bg -> openai: CREATE_NEW_THREAD
+        openai --> bg: (thread_id)
+        bg -> ch_storage: Store\n{videoId: thread_id}
+    end
+end
+
+bg -> openai: Add message to thread
+openai --> bg: response...
+bg -> openai: Run thread_id
+openai --> bg: response...
+bg -> openai: Get messages from thread_id
+openai --> bg: Messages from thread_id
+
+bg -> popup: Display Assistant message
+
+== Popup options ==
+user -> popup: Clear thread
+popup -> bg: NEW_THREAD (cant "reset" thread, only delete and create new one)
+bg -> openai: DELETE v1/threads/{thread_id}
+bg -> openai: POST v1/threads
+
+== Options page ==
+user -> options: Change model
+options -> bg: CHANGE_MODEL
+bg -> ch_storage: Save model
+
+
+@enduml
